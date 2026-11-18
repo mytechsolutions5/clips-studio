@@ -33,6 +33,7 @@ DEST = ROOT / "vendor" / "ffmpeg"
 # Pinned so a build is reproducible and a surprise upstream change can't
 # silently alter what ships. Bump deliberately.
 BUILD_URL = "https://www.gyan.dev/ffmpeg/builds/ffmpeg-release-essentials.zip"
+FALLBACK_URL = "https://github.com/yt-dlp/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-win64-gpl.zip"
 BUILD_NAME = "gyan.dev ffmpeg-release-essentials (GPL)"
 SOURCE_URL = "https://www.ffmpeg.org/download.html"
 
@@ -66,11 +67,19 @@ def fetch(force: bool = False) -> int:
 
     print(f"Downloading {BUILD_NAME}")
     print(f"  {BUILD_URL}")
-    try:
-        with urllib.request.urlopen(BUILD_URL, timeout=180) as r:
-            blob = r.read()
-    except Exception as e:
-        print(f"\nDownload failed: {type(e).__name__}: {e}")
+    blob = None
+    for url in (BUILD_URL, FALLBACK_URL):
+        try:
+            req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+            with urllib.request.urlopen(req, timeout=180) as r:
+                blob = r.read()
+            break
+        except Exception as e:
+            print(f"\nDownload from {url} failed: {type(e).__name__}: {e}")
+            if url != FALLBACK_URL:
+                print(f"Trying fallback URL: {FALLBACK_URL}")
+
+    if not blob:
         print("Fetch it manually and put ffmpeg.exe + ffprobe.exe in:")
         print(f"  {DEST}")
         return 1

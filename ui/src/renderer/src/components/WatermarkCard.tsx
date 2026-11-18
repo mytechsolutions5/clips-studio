@@ -2,6 +2,7 @@ import { t } from '../lib/i18n'
 import { useEffect, useState } from 'react'
 import { api } from '../lib/api'
 import type { BrandingProfile, WatermarkConfig } from '../lib/types'
+import { safeStorageGet, safeStorageSet } from '../lib/storage'
 import WatermarkControls, { DEFAULT_WATERMARK } from './WatermarkControls'
 
 const ENABLED_KEY = 'watermark-enabled'
@@ -10,15 +11,15 @@ const PROFILE_KEY = 'watermark-profile-id'
 /** Whether branding is on + which profile is active (read by the Generate
  *  bar to attach watermark_profile_id to new jobs). */
 export function watermarkSelection(): { enabled: boolean; profileId: number | null } {
-  const id = Number(localStorage.getItem(PROFILE_KEY))
+  const id = Number(safeStorageGet(PROFILE_KEY))
   return {
-    enabled: localStorage.getItem(ENABLED_KEY) === 'true',
+    enabled: safeStorageGet(ENABLED_KEY) === 'true',
     profileId: id > 0 ? id : null
   }
 }
 
 export function setWatermarkEnabled(on: boolean): void {
-  localStorage.setItem(ENABLED_KEY, String(on))
+  safeStorageSet(ENABLED_KEY, String(on))
 }
 
 /** Branding-profile management: create/switch/edit/save/delete the saved
@@ -38,7 +39,7 @@ export default function BrandingEditor(): JSX.Element {
     const pick = list.find((p) => p.id === (selectId ?? activeId)) ?? list[0]
     if (pick) {
       setActiveId(pick.id)
-      localStorage.setItem(PROFILE_KEY, String(pick.id))
+      safeStorageSet(PROFILE_KEY, String(pick.id))
       setName(pick.name)
       setConfig(pick.config)
     }
@@ -57,7 +58,7 @@ export default function BrandingEditor(): JSX.Element {
     const p = profiles.find((x) => x.id === id)
     if (!p) return
     setActiveId(id)
-    localStorage.setItem(PROFILE_KEY, String(id))
+    safeStorageSet(PROFILE_KEY, String(id))
     setName(p.name)
     setConfig(p.config)
   }

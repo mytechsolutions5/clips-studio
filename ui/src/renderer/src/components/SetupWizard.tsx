@@ -3,17 +3,18 @@ import { api, errorText } from '../lib/api'
 import { isChecking, pullPercent, pullStep } from '../lib/modelPull'
 import { useEvents } from '../lib/useEvents'
 import type { ModelPull, Preflight, PreflightCheck, SystemStats } from '../lib/types'
+import { safeStorageGet, safeStorageRemove, safeStorageSet } from '../lib/storage'
 import OpenRouterPrompt from './OpenRouterPrompt'
 
 const DONE_KEY = 'setup-wizard-done'
 
 /** Has the wizard been completed on this machine? */
 export function setupDone(): boolean {
-  return localStorage.getItem(DONE_KEY) === '1'
+  return safeStorageGet(DONE_KEY) === '1'
 }
 
 export function resetSetup(): void {
-  localStorage.removeItem(DONE_KEY)
+  safeStorageRemove(DONE_KEY)
 }
 
 const LABEL: Record<string, string> = {
@@ -251,7 +252,7 @@ export default function SetupWizard({ onClose }: { onClose: () => void }): JSX.E
   }, [step, ollamaOk, rec, modelOk, startPull])
 
   const finish = (): void => {
-    localStorage.setItem(DONE_KEY, '1')
+    safeStorageSet(DONE_KEY, '1')
     onClose()
   }
 

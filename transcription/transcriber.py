@@ -88,6 +88,24 @@ def _on_gpu(model) -> bool:
 
 
 def _load_model(model_size: str, device: str):
+    # PyAV 14+ removed metadata_errors from av.open, which faster-whisper calls.
+    try:
+        import av
+        if not getattr(av, "_safe_metadata_open_patched", False):
+            _orig_av_open = av.open
+            def _safe_av_open(*args, **kwargs):
+                try:
+                    return _orig_av_open(*args, **kwargs)
+                except TypeError:
+                    if "metadata_errors" in kwargs:
+                        kwargs.pop("metadata_errors", None)
+                        return _orig_av_open(*args, **kwargs)
+                    raise
+            av.open = _safe_av_open
+            av._safe_metadata_open_patched = True
+    except Exception:
+        pass
+
     # Imported lazily: loading faster-whisper/ctranslate2 takes seconds and
     # isn't needed when the transcript is cached.
     from faster_whisper import WhisperModel

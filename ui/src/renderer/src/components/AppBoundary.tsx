@@ -36,6 +36,7 @@ export default class AppBoundary extends Component<
     // A stale preload is common enough in development to name directly,
     // rather than leaving someone to decode "undefined is not an object".
     const stalePreload = /window\.studio|Cannot read (properties|property)/i.test(message)
+    const storageQuota = /quota|setItem.*Storage|exceeded the quota/i.test(message)
 
     return (
       <div className="h-screen grid place-items-center p-8 bg-base text-ink">
@@ -51,16 +52,38 @@ export default class AppBoundary extends Component<
               reopening it should fix it.
             </p>
           )}
+          {storageQuota && (
+            <p className="text-sm text-muted leading-relaxed">
+              Browser storage quota was exceeded on this address. You can clear the cached
+              storage below and reload.
+            </p>
+          )}
           <pre className="text-xs text-muted/70 bg-surface border border-raised/60 rounded-lg p-3 whitespace-pre-wrap break-words">
             {message}
           </pre>
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
             <button className="btn-accent" onClick={() => window.location.reload()}>
               Reload
             </button>
             <button className="btn-ghost" onClick={() => this.setState({ error: null })}>
               Try again
             </button>
+            {storageQuota && (
+              <button
+                className="btn-ghost text-accent border border-accent/40"
+                onClick={() => {
+                  try {
+                    localStorage.clear()
+                  } catch {}
+                  try {
+                    sessionStorage.clear()
+                  } catch {}
+                  window.location.reload()
+                }}
+              >
+                Clear storage &amp; Reload
+              </button>
+            )}
           </div>
           <p className="text-xs text-muted">
             If it keeps happening, the Feedback button in the app sends this with the

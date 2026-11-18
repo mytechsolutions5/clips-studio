@@ -1,11 +1,13 @@
 /** Where exported clips are saved. Defaults to the OS Downloads folder (like
  *  other video editors) and remembers the user's chosen folder. */
 
+import { safeStorageGet, safeStorageSet } from './storage'
+
 const KEY = 'export-folder'
 
 /** The remembered export folder, or the OS Downloads folder on first use. */
 export async function getExportFolder(): Promise<string> {
-  const saved = localStorage.getItem(KEY)
+  const saved = safeStorageGet(KEY)
   if (saved) return saved
   try {
     return await window.studio.getDownloadsPath()
@@ -15,7 +17,7 @@ export async function getExportFolder(): Promise<string> {
 }
 
 export function setExportFolder(path: string): void {
-  localStorage.setItem(KEY, path)
+  safeStorageSet(KEY, path)
 }
 
 /** Open the native folder picker; returns the chosen folder (and remembers

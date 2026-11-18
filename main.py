@@ -61,8 +61,6 @@ if os.environ.get("CLIPSKITTY_SCRIPT_HOST") == "1":
 import yaml
 
 from core.paths import resolve_data_dir, user_config_path
-from core.pipeline import process_video
-from core.scheduler import run_daemon
 from core.state import StateDB
 
 # What ships with the app. Read-only defaults in an installed build; the file
@@ -216,6 +214,7 @@ def main() -> int:
 
     try:
         if args.command == "process":
+            from core.pipeline import process_video
             clips = process_video(args.url, config, db, force=args.force)
             if clips:
                 print(f"\nDone. {len(clips)} clip(s) created:")
@@ -224,6 +223,7 @@ def main() -> int:
             return 0
 
         if args.command == "run":
+            from core.scheduler import run_daemon
             run_daemon(config, db)
             return 0
 

@@ -78,7 +78,7 @@ def test_falling_back_to_cpu_changes_only_the_encoder():
     retry would silently lose the seek, the subtitles or the audio settings."""
     hw = _CANDIDATES["nvenc"]
     cmd = ["ffmpeg", "-y", "-hwaccel", "auto", "-ss", "674.00", "-i", "in.mp4",
-           "-t", "66.00", "-vsync", "cfr", *hw,
+           "-t", "66.00", "-fps_mode", "cfr", *hw,
            "-c:a", "aac", "-b:a", "128k", "-vf", "subtitles=x.ass", "out.mp4"]
 
     swapped = _swap_encoder(cmd, hw, CPU_ARGS)

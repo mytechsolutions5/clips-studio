@@ -1,5 +1,6 @@
 import type { StudioEvent } from './types'
 import { useEvents } from './useEvents'
+import { safeStorageGet, safeStorageSet } from './storage'
 
 /** Desktop notifications for a queue running unattended.
  *
@@ -14,19 +15,19 @@ const FINISH_KEY = 'notify-on-finish'
 const EMPTY_KEY = 'notify-on-queue-empty'
 
 export function notifyOnFinish(): boolean {
-  return localStorage.getItem(FINISH_KEY) !== 'false'
+  return safeStorageGet(FINISH_KEY) !== 'false'
 }
 
 export function notifyOnQueueEmpty(): boolean {
-  return localStorage.getItem(EMPTY_KEY) !== 'false'
+  return safeStorageGet(EMPTY_KEY) !== 'false'
 }
 
 export function setNotifyOnFinish(on: boolean): void {
-  localStorage.setItem(FINISH_KEY, String(on))
+  safeStorageSet(FINISH_KEY, String(on))
 }
 
 export function setNotifyOnQueueEmpty(on: boolean): void {
-  localStorage.setItem(EMPTY_KEY, String(on))
+  safeStorageSet(EMPTY_KEY, String(on))
 }
 
 function send(title: string, body: string): void {

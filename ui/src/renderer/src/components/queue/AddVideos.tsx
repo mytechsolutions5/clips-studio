@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { api } from '../../lib/api'
 import type { CaptionStyle, JobOptions, PipelineChoice } from '../../lib/types'
+import { safeStorageGet, safeStorageRemove, safeStorageSet } from '../../lib/storage'
 import CaptionStyleControls, { DEFAULT_CAPTION_STYLE } from '../CaptionStyleControls'
 import BrandingEditor, { setWatermarkEnabled, watermarkSelection } from '../WatermarkCard'
 import GamingLayoutEditor from '../GamingLayoutEditor'
@@ -157,7 +158,7 @@ const TOGGLES: { key: ToggleKey; label: string; hint: string; title: string }[] 
 
 function savedStyle(): Required<CaptionStyle> {
   try {
-    const saved = JSON.parse(localStorage.getItem(PREF.caption_style) ?? '{}')
+    const saved = JSON.parse(safeStorageGet(PREF.caption_style) ?? '{}')
     // Remembered with the Highlights post style, which is gone: only its
     // caption settings are kept.
     delete saved.post_style
@@ -200,7 +201,7 @@ const PREF = {
  *  that has gone is dropped and settings are fitted, as for a draft. */
 function rememberedChoices(key: string): PipelineChoice[] | null {
   try {
-    const raw = JSON.parse(localStorage.getItem(key) ?? 'null')
+    const raw = JSON.parse(safeStorageGet(key) ?? 'null')
     if (!Array.isArray(raw)) return null
     const list = raw
       .filter((c) => c && typeof c.id === 'string' && c.id)
@@ -219,8 +220,8 @@ function rememberedChoices(key: string): PipelineChoice[] | null {
 /** Remember plugins under `key` for the next video; none forgets them. */
 function rememberChoices(key: string, list: PipelineChoice[] | null | undefined): void {
   try {
-    if (list?.length) localStorage.setItem(key, JSON.stringify(list))
-    else localStorage.removeItem(key)
+    if (list?.length) safeStorageSet(key, JSON.stringify(list))
+    else safeStorageRemove(key)
   } catch {
     // Not remembered for next time; this video still gets it.
   }
@@ -277,7 +278,7 @@ function fittedChoices(list: PipelineChoice[], able: InstalledPlugin[]): Pipelin
 /** "Also make 9:16 Shorts" under Longform, as last chosen. */
 function rememberedShorts(): boolean {
   try {
-    return localStorage.getItem(PREF.longform_shorts) === 'true'
+    return safeStorageGet(PREF.longform_shorts) === 'true'
   } catch {
     return false
   }
@@ -285,16 +286,16 @@ function rememberedShorts(): boolean {
 
 function remember(key: ToggleKey, on: boolean, mode?: string): void {
   try {
-    if (key === 'captions') localStorage.setItem(PREF.captions, String(on))
-    else if (key === 'long_clips') localStorage.setItem(PREF.long_clips, String(on))
-    else if (key === 'podcast') localStorage.setItem(PREF.podcast, String(on))
-    else if (key === 'vertical_live') localStorage.setItem(PREF.vertical_live, String(on))
-    else if (key === 'gaming') localStorage.setItem(PREF.gaming, String(on))
-    else if (key === 'sport') localStorage.setItem(PREF.sport, String(on))
-    else if (key === 'edit' && !on) localStorage.removeItem(PREF.edit) // on, rememberEdit keeps the list
+    if (key === 'captions') safeStorageSet(PREF.captions, String(on))
+    else if (key === 'long_clips') safeStorageSet(PREF.long_clips, String(on))
+    else if (key === 'podcast') safeStorageSet(PREF.podcast, String(on))
+    else if (key === 'vertical_live') safeStorageSet(PREF.vertical_live, String(on))
+    else if (key === 'gaming') safeStorageSet(PREF.gaming, String(on))
+    else if (key === 'sport') safeStorageSet(PREF.sport, String(on))
+    else if (key === 'edit' && !on) safeStorageRemove(PREF.edit) // on, rememberEdit keeps the list
     else if (key === 'longform') {
-      localStorage.setItem(PREF.longform, String(on))
-      if (mode) localStorage.setItem(PREF.longform_mode, mode)
+      safeStorageSet(PREF.longform, String(on))
+      if (mode) safeStorageSet(PREF.longform_mode, mode)
     }
     // 'watermark' is deliberately absent: WatermarkCard owns its own two keys
     // and writes them itself.
@@ -311,30 +312,30 @@ function remember(key: ToggleKey, on: boolean, mode?: string): void {
 export function seedOptions(): JobOptions {
   const wm = watermarkSelection()
   const o: JobOptions = {
-    captions: localStorage.getItem(PREF.captions) !== 'false',
+    captions: safeStorageGet(PREF.captions) !== 'false',
     caption_style: savedStyle()
   }
-  if (localStorage.getItem(PREF.long_clips) === 'true') o.long_clips = true
-  if (localStorage.getItem(PREF.podcast) === 'true') o.podcast = true
-  if (localStorage.getItem(PREF.longform) === 'true') {
+  if (safeStorageGet(PREF.long_clips) === 'true') o.long_clips = true
+  if (safeStorageGet(PREF.podcast) === 'true') o.podcast = true
+  if (safeStorageGet(PREF.longform) === 'true') {
     o.longform = {
-      mode: localStorage.getItem(PREF.longform_mode) ?? 'short_clips',
+      mode: safeStorageGet(PREF.longform_mode) ?? 'short_clips',
       ...(rememberedShorts() ? { shorts: true } : {})
     }
   }
   // Vertical Live can't be combined with Podcast or Longform; if an older
   // remembered pair says otherwise, those win and it stays off.
-  if (localStorage.getItem(PREF.vertical_live) === 'true' && !o.podcast && !o.longform) {
+  if (safeStorageGet(PREF.vertical_live) === 'true' && !o.podcast && !o.longform) {
     o.vertical_live = true
-    if (localStorage.getItem(PREF.gaming_scoring) === 'true') o.gaming_scoring = true
+    if (safeStorageGet(PREF.gaming_scoring) === 'true') o.gaming_scoring = true
   }
   // Gaming / Reaction likewise, and the older modes win over it.
-  if (localStorage.getItem(PREF.gaming) === 'true' && !o.podcast && !o.longform && !o.vertical_live) {
+  if (safeStorageGet(PREF.gaming) === 'true' && !o.podcast && !o.longform && !o.vertical_live) {
     o.gaming = true
   }
   // Sports too: Podcast and Gaming each score the video their own way, and
   // win over it.
-  const match = localStorage.getItem(PREF.sport) === 'true' && !o.podcast && !o.gaming ? lastSport() : null
+  const match = safeStorageGet(PREF.sport) === 'true' && !o.podcast && !o.gaming ? lastSport() : null
   if (match) {
     o.sport = match
     delete o.gaming_scoring
@@ -381,7 +382,7 @@ function emptySlot(from?: JobOptions): Slot {
 
 function loadDraft(): Slot[] {
   try {
-    const raw = JSON.parse(localStorage.getItem(DRAFT_KEY) ?? 'null')
+    const raw = JSON.parse(safeStorageGet(DRAFT_KEY) ?? 'null')
     if (Array.isArray(raw) && raw.length > 0) {
       return raw.map((s: Slot) => ({ ...s, key: newKey(), error: undefined }))
     }
@@ -404,7 +405,7 @@ function loadDraft(): Slot[] {
  *  and nothing else. */
 export default function AddVideos({ onAdded }: { onAdded?: () => void }): JSX.Element {
   const [slots, setSlots] = useState<Slot[]>(loadDraft)
-  const [channel, setChannel] = useState(localStorage.getItem('upload-channel') ?? '')
+  const [channel, setChannel] = useState(safeStorageGet('upload-channel') ?? '')
   const [openStyle, setOpenStyle] = useState<string | null>(null)
   // The row whose Gaming / Reaction split is being set up, on its own frames.
   const [splitFor, setSplitFor] = useState<string | null>(null)
@@ -557,8 +558,8 @@ export default function AddVideos({ onAdded }: { onAdded?: () => void }): JSX.El
   // Keep the draft. Several pasted links must not die to an accidental close.
   useEffect(() => {
     const keep = slots.filter((s) => s.url.trim() || s.path)
-    if (keep.length > 0) localStorage.setItem(DRAFT_KEY, JSON.stringify(keep))
-    else localStorage.removeItem(DRAFT_KEY)
+    if (keep.length > 0) safeStorageSet(DRAFT_KEY, JSON.stringify(keep))
+    else safeStorageRemove(DRAFT_KEY)
   }, [slots])
 
   const ready = slots.filter((s) => s.url.trim() || s.path)
@@ -623,11 +624,7 @@ export default function AddVideos({ onAdded }: { onAdded?: () => void }): JSX.El
     <K extends keyof CaptionStyle>(k: K, v: CaptionStyle[K]): void => {
       // Remembered for the next video, which starts from it (#138).
       const style = { ...slotStyle(slot), [k]: v }
-      try {
-        localStorage.setItem(PREF.caption_style, JSON.stringify(style))
-      } catch {
-        // Not remembered for next time; this video still gets it.
-      }
+      safeStorageSet(PREF.caption_style, JSON.stringify(style))
       patchOptions(slot.key, { caption_style: style })
     }
 
@@ -790,11 +787,7 @@ export default function AddVideos({ onAdded }: { onAdded?: () => void }): JSX.El
     if (!slot.options.longform) return
     const { shorts: _drop, ...rest } = slot.options.longform
     patchOptions(slot.key, { longform: on ? { ...rest, shorts: true } : rest })
-    try {
-      localStorage.setItem(PREF.longform_shorts, String(on))
-    } catch {
-      // Not remembered for next time; this video still gets it.
-    }
+    safeStorageSet(PREF.longform_shorts, String(on))
   }
 
   /** Under Vertical Live, like Longform's output: what the live is. Gaming /
@@ -818,11 +811,7 @@ export default function AddVideos({ onAdded }: { onAdded?: () => void }): JSX.El
       delete next.pipeline // gaming scoring picks the moments: not with a pipeline
     } else delete next.gaming_scoring
     rememberPlugins(next)
-    try {
-      localStorage.setItem(PREF.gaming_scoring, String(content === 'gaming'))
-    } catch {
-      // a blocked localStorage only means it isn't remembered
-    }
+    safeStorageSet(PREF.gaming_scoring, String(content === 'gaming'))
     replaceOptions(slot.key, next)
   }
 
@@ -939,7 +928,7 @@ export default function AddVideos({ onAdded }: { onAdded?: () => void }): JSX.El
         })
         .map((s) => ({ ...s, error: failures.get(s.path ?? s.url.trim()) }))
       setSlots(left.length > 0 ? left : [emptySlot()])
-      if (left.length === 0) localStorage.removeItem(DRAFT_KEY)
+      if (left.length === 0) safeStorageRemove(DRAFT_KEY)
       if (ok > 0) onAdded?.()
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e))
@@ -1194,11 +1183,7 @@ export default function AddVideos({ onAdded }: { onAdded?: () => void }): JSX.El
                   value={slot.options.longform.mode}
                   onChange={(e) => {
                     patchOptions(slot.key, { longform: { ...slot.options.longform, mode: e.target.value } })
-                    try {
-                      localStorage.setItem(PREF.longform_mode, e.target.value)
-                    } catch {
-                      // Not remembered for next time; this video still gets it.
-                    }
+                    safeStorageSet(PREF.longform_mode, e.target.value)
                   }}
                   aria-label={`Longform output type for video ${n + 1}`}
                 >
@@ -1337,7 +1322,7 @@ export default function AddVideos({ onAdded }: { onAdded?: () => void }): JSX.El
             value={hasFiles ? channel : ''}
             onChange={(e) => {
               setChannel(e.target.value)
-              localStorage.setItem('upload-channel', e.target.value)
+              safeStorageSet('upload-channel', e.target.value)
             }}
           />
           {settingsBad && (

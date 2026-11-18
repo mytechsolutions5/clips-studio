@@ -695,7 +695,12 @@ def create_app(config: dict, settings_path: Path) -> FastAPI:
     app = FastAPI(title="Clips Kitty API", version="0.1")
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],  # Vite dev server
+        allow_origins=[
+            "http://localhost:5173",
+            "http://127.0.0.1:5173",
+            "http://localhost:5174",
+            "http://127.0.0.1:5174"
+        ],  # Vite dev server
         allow_methods=["*"],
         allow_headers=["*"],
     )

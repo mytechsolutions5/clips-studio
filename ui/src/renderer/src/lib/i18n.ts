@@ -72,10 +72,12 @@ export const APP_LANGUAGES: [string, string][] = [
     .sort((a, b) => a[1].localeCompare(b[1]))
 ]
 
+import { safeStorageGet, safeStorageSet } from './storage'
+
 const STORE_KEY = 'app-language'
 
 export function appLanguageSetting(): string {
-  return localStorage.getItem(STORE_KEY) ?? 'system'
+  return safeStorageGet(STORE_KEY) ?? 'system'
 }
 
 /** The locale actually in effect (resolving 'system' to the OS language). */
@@ -90,7 +92,7 @@ export function activeLocale(): string {
  *  event tells App to re-render the tree, so the user stays exactly where
  *  they are (e.g. mid-way through the Settings page). */
 export function setAppLanguage(code: string): void {
-  localStorage.setItem(STORE_KEY, code)
+  safeStorageSet(STORE_KEY, code)
   dict = LOCALES[activeLocale()]
   window.dispatchEvent(new CustomEvent('app-language-changed'))
 }

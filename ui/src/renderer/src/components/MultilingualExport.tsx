@@ -3,6 +3,7 @@ import { api } from '../lib/api'
 import { getExportFolder, pickExportFolder, setExportFolder } from '../lib/exportFolder'
 import { Folder } from './icons'
 import { activeLocale, t } from '../lib/i18n'
+import { safeStorageGet, safeStorageSet } from '../lib/storage'
 import TranslationReview from './TranslationReview'
 import CaptionStyleControls, { DEFAULT_CAPTION_STYLE } from './CaptionStyleControls'
 import GlossaryEditor from './GlossaryEditor'
@@ -55,7 +56,7 @@ export default function MultilingualExport({
   >([])
   const [picked, setPicked] = useState<string[]>(() => {
     try {
-      return JSON.parse(localStorage.getItem(REMEMBER) ?? '[]')
+      return JSON.parse(safeStorageGet(REMEMBER) ?? '[]')
     } catch {
       return []
     }
@@ -74,7 +75,7 @@ export default function MultilingualExport({
   // Chosen dubbing voice per language, remembered between sessions.
   const [voiceFor, setVoiceFor] = useState<Record<string, string>>(() => {
     try {
-      return JSON.parse(localStorage.getItem('multilingual-voices') ?? '{}')
+      return JSON.parse(safeStorageGet('multilingual-voices') ?? '{}')
     } catch {
       return {}
     }
@@ -93,7 +94,7 @@ export default function MultilingualExport({
   const [previewLang, setPreviewLang] = useState<string | null>(null)
   const [style, setStyle] = useState<Required<CaptionStyle>>(() => {
     try {
-      const saved = JSON.parse(localStorage.getItem(STYLE_KEY) ?? '{}')
+      const saved = JSON.parse(safeStorageGet(STYLE_KEY) ?? '{}')
       // Remembered with the Highlights post style's keys, which are gone.
       delete saved.post_style
       delete saved.card_position
@@ -151,7 +152,7 @@ export default function MultilingualExport({
   const setStyleField = <K extends keyof CaptionStyle>(key: K, value: CaptionStyle[K]): void => {
     setStyle((s) => {
       const next = { ...s, [key]: value }
-      localStorage.setItem(STYLE_KEY, JSON.stringify(next))
+      safeStorageSet(STYLE_KEY, JSON.stringify(next))
       return next
     })
   }
@@ -232,7 +233,7 @@ export default function MultilingualExport({
   const toggle = (code: string): void => {
     setPicked((prev) => {
       const next = prev.includes(code) ? prev.filter((c) => c !== code) : [...prev, code]
-      localStorage.setItem(REMEMBER, JSON.stringify(next))
+      safeStorageSet(REMEMBER, JSON.stringify(next))
       return next
     })
   }
@@ -609,7 +610,7 @@ export default function MultilingualExport({
                   onChange={(e) => {
                     const next = { ...voiceFor, [c]: e.target.value }
                     setVoiceFor(next)
-                    localStorage.setItem('multilingual-voices', JSON.stringify(next))
+                    safeStorageSet('multilingual-voices', JSON.stringify(next))
                   }}
                 >
                   <option value="">{t('Default voice')}</option>

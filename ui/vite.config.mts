@@ -66,6 +66,6 @@ export default defineConfig({
     // published port is bound to 127.0.0.1 in docker-compose.yml, so this
     // does not put the dev server on the network.
     host: '0.0.0.0',
-    port: 5173
+    port: 5174
   }
 })

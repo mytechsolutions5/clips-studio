@@ -27,11 +27,13 @@ export const DEFAULT_APPEARANCE: Appearance = {
   textColor: '#f1f5f9'
 }
 
+import { safeStorageGet, safeStorageSet } from './storage'
+
 const KEY = 'clips-studio-appearance'
 
 export function loadAppearance(): Appearance {
   try {
-    const raw = localStorage.getItem(KEY)
+    const raw = safeStorageGet(KEY)
     if (!raw) return DEFAULT_APPEARANCE
     return { ...DEFAULT_APPEARANCE, ...(JSON.parse(raw) as Partial<Appearance>) }
   } catch {
@@ -40,7 +42,7 @@ export function loadAppearance(): Appearance {
 }
 
 export function saveAppearance(a: Appearance): void {
-  localStorage.setItem(KEY, JSON.stringify(a))
+  safeStorageSet(KEY, JSON.stringify(a))
   applyAppearance(a)
 }
 
